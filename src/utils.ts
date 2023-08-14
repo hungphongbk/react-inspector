@@ -1,51 +1,58 @@
 declare global {
-  interface Window {
-    __REACT_DEVTOOLS_GLOBAL_HOOK__: any;
-    __REACT_DEVTOOLS_TARGET_WINDOW__: any;
-  }
+    interface Window {
+        __REACT_DEVTOOLS_GLOBAL_HOOK__: any;
+        __REACT_DEVTOOLS_TARGET_WINDOW__: any;
+    }
 }
 
 interface DebugSource {
-  columnNumber?: number;
-  fileName?: string;
-  lineNumber?: number;
+    columnNumber?: number;
+    fileName?: string;
+    lineNumber?: number;
 }
 
 // TODO Refactoring needed ref react/packages/react-devtools-shared/src/backend/agent.js getBestMatchingRendererInterface
 export const checkDevtoolsGlobalHook = (): boolean =>
-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__ &&
-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers &&
-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.size > 0 &&
-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.get(1);
+    window.__REACT_DEVTOOLS_GLOBAL_HOOK__ &&
+    window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers &&
+    window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.size > 0 &&
+    window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.get(1);
 
 // TODO Refactoring needed ref react/packages/react-devtools-shared/src/backend/agent.js getBestMatchingRendererInterface
 const getDevtoolsGlobalHookRenderer = () => {
-  if (!checkDevtoolsGlobalHook()) return null;
-  return window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.get(1);
+    if (!checkDevtoolsGlobalHook()) return null;
+    return window.__REACT_DEVTOOLS_GLOBAL_HOOK__.renderers.get(1);
 };
 
 export const findFiberByHostInstance = (
-  target: HTMLElement
+    target: HTMLElement
 ): { _debugSource: DebugSource } | null => {
-  if (!checkDevtoolsGlobalHook()) return null;
+    if (!checkDevtoolsGlobalHook()) return null;
 
-  const renderer = getDevtoolsGlobalHookRenderer();
-  if (!renderer) return null;
+    const renderer = getDevtoolsGlobalHookRenderer();
+    if (!renderer) return null;
 
-  const fiber = renderer.findFiberByHostInstance(target) || null;
+    let _target = target;
+    let fiber = renderer.findFiberByHostInstance(_target) || null;
 
-  return fiber && fiber._debugSource ? fiber : null;
+    do {
+        if (!fiber) return fiber;
+        // console.log(fiber);
+        if (!fiber._debugSource) {
+            fiber = fiber._debugOwner;
+        } else return fiber;
+    } while (true);
 };
 
 export const getEditorLink = (
-  openInEditorUrl: string,
-  debugSource: DebugSource
+    openInEditorUrl: string,
+    debugSource: DebugSource
 ) => {
-  const { fileName, columnNumber, lineNumber } = debugSource;
-  return openInEditorUrl
-    .replace("{path}", fileName || "")
-    .replace("{line}", lineNumber ? lineNumber.toString() : "0")
-    .replace("{column}", columnNumber ? columnNumber.toString() : "0");
+    const {fileName, columnNumber, lineNumber} = debugSource;
+    return openInEditorUrl
+        .replace("{path}", fileName || "")
+        .replace("{line}", lineNumber ? lineNumber.toString() : "0")
+        .replace("{column}", columnNumber ? columnNumber.toString() : "0");
 };
 
 export {};
