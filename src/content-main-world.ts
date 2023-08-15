@@ -57,6 +57,17 @@ const handleElementPointerOver = (e: PointerEvent) => {
   overlay.inspect([target], getInspectName(target));
 };
 
+async function fetchWithInterval(deepLink:string, times:number, interval:number) {
+  for (let i = 0; i < times; i++) {
+    try {
+      await fetch(deepLink);
+    } catch (error) {
+      // Ignore errors and continue
+    }
+    await new Promise(resolve => setTimeout(resolve, interval));
+  }
+}
+
 const handleInspectorClick = async (e: MouseEvent) => {
   e.preventDefault();
   exitInspectorMode();
@@ -76,7 +87,16 @@ const handleInspectorClick = async (e: MouseEvent) => {
 
   const deepLink = getEditorLink(openInEditorUrl, fiber._debugSource)
   if(openInEditorMethod === 'fetch'){
-    fetch(deepLink);
+    const times = 3;
+    const interval = 800; // milliseconds
+
+    fetchWithInterval(deepLink, times, interval)
+        .then(() => {
+          console.log("Fetch operations completed.");
+        })
+        .catch(error => {
+          console.error("An error occurred:", error);
+        });
   }else{
     window.open(deepLink);
   }
